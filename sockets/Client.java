@@ -21,7 +21,7 @@ public class Client {
             String line;
             try{ 
                 while((line = in.readLine()) != null) {
-                    System.out.println("[SERVER]" + line); 
+                    System.out.println("[SERVER] " + line); 
                     System.out.print("> ");
                     System.out.flush();
                 }

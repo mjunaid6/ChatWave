@@ -55,8 +55,8 @@ public class ChatServer {
 
     public boolean createGroup(String groupName, Set<String> members) {
         if (groups.putIfAbsent(groupName, ConcurrentHashMap.newKeySet()) == null) {
-        groups.get(groupName).addAll(members);
-        return true;
+            groups.get(groupName).addAll(members);
+            return true;
         }
         return false;
     }
