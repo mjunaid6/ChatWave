@@ -10,8 +10,8 @@ public class Client {
     private final Socket socket;
     private BufferedReader in;
     private BufferedWriter out;
-    public Client(Socket socket) throws IOException{
-        this.socket = socket;
+    public Client(String HOST, int PORT) throws IOException{
+        this.socket = new Socket(HOST,PORT);
         in = new BufferedReader(new InputStreamReader(socket.getInputStream(),"UTF-8"));
         out = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream(),"UTF-8"));
     }
@@ -67,8 +67,7 @@ public class Client {
             System.out.print("Enter PORT addres : ");
             int port = sc.nextInt();
 
-            Socket s = new Socket(host,port);
-            Client c2 = new Client(s);
+            Client c2 = new Client(host,port);
 
             c2.start();
             sc.close();

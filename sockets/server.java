@@ -4,15 +4,15 @@ import java.util.*;
 import java.util.concurrent.*;
 
 public class Server {
-    private final int port = 9090;
+    private final int PORT = 9090;
     private final ServerSocket serverSocket;
     private ExecutorService pool = Executors.newCachedThreadPool();
     private ConcurrentHashMap<String,ClientHandler> clients = new ConcurrentHashMap<>();
     private ConcurrentHashMap<String, Set<String>> groups = new ConcurrentHashMap<>();
 
     public Server() throws IOException {
-        serverSocket = new ServerSocket(port);
-        System.out.println("SERVER listening on PORT:"+port);
+        serverSocket = new ServerSocket(PORT);
+        System.out.println("SERVER listening on PORT:"+PORT);
     }
 
     public void start() {
@@ -46,11 +46,7 @@ public class Server {
     }
 
     public boolean createGroup(String groupName, Set<String> members) {
-        if(!groups.containsKey(groupName)) {
-            groups.put(groupName,new HashSet<>(members));
-            return true;
-        }
-        return false;
+        return groups.putIfAbsent(groupName,new HashSet<>(members)) == null;
     }
 
     public Set<String> getGroupMembers(String groupName) {
