@@ -39,7 +39,7 @@ public class Client {
             while(sc.hasNextLine()) {
                 String line = sc.nextLine();
                 if(line.equalsIgnoreCase("exit")) {
-                    out.write("Logout\r\n");
+                    out.write("LOGOUT\r\n");
                     out.flush();
                     break;
                 }

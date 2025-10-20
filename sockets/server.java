@@ -45,18 +45,29 @@ public class Server {
         return clients.keySet();
     }
 
-    public boolean createGroup(String groupName, Set<String> members) {
-        return groups.putIfAbsent(groupName,new HashSet<>(members)) == null;
+    public boolean createGroup(String groupName, Set<String> members, ClientHandler admin) {
+        Set<String> validMembers = new HashSet<>();
+        members.forEach((user) -> {
+            if(clients.containsKey(user)) validMembers.add(user);
+            else admin.send(user + " doesn't exist");
+        });
+        if(validMembers.size() < 2) return false;
+        validMembers.add(admin.username);
+        return groups.putIfAbsent(groupName,new HashSet<>(validMembers)) == null;
     }
 
     public Set<String> getGroupMembers(String groupName) {
         return groups.get(groupName);
     }
 
+    public Set<String> getAllGroups() {
+        return groups.keySet();
+    }
+
     public boolean sendPrivateMessage(String from, String to, String msg) {
         ClientHandler target = clients.get(to);
         if(target != null) {
-            target.send("PRIVATE FROM " + from + ": " + msg);
+            target.send("PRIVATE MSG FROM " + from + ", Message : " + msg);
             return true;
         }
         return false;
@@ -121,6 +132,8 @@ public class Server {
                         case "CREATE_GROUP": handleCreateGroup(parts); break;
                         case "GROUP_MSG": handleGroupMsg(parts); break;
                         case "LIST_USERS": handleListUsers(); break;
+                        case "GROUP_MEMBERS" : handleGetGroupMembers(parts); break;
+                        case "LIST_GROUPS" : handleListGroups(); break;
                         case "LOGOUT": close(); return;
                         default: send("ERROR Unknown command");
                     }
@@ -151,27 +164,47 @@ public class Server {
                 send("ERROR : MSG <to> <message>");
                 return;
             }
-            server.sendPrivateMessage(username, parts[1], parts[2]);
-            send("Message sent to "+parts[1]);
+            if(username == null) {
+                send("ERROR: Please LOGIN first using LOGIN <username>");
+                return;
+            }
+            if(server.sendPrivateMessage(username, parts[1], parts[2])) send("Message sent to "+parts[1]);
+            else send("User doesn't exit");
         }
 
         private void handleCreateGroup(String[] parts) {
-            if(parts.length > 3) {
+            if(parts.length < 3) {
                 send("ERROR usage : CREATE_GROUP <group_name> <member1,member2,...>");
                 return;
             }
+            if(username == null) {
+                send("ERROR: Please LOGIN first using LOGIN <username>");
+                return;
+            }
             Set<String> members = new HashSet<>(Arrays.asList(parts[2].split(",")));
-            members.add(username);
-            if(server.createGroup(parts[1],members)) {
+            if(server.createGroup(parts[1],members,this)) {
                 send(parts[1]+" group created successfull");
                 server.sendGroupMessage(username,parts[1],parts[1]+" group created successfull and you have been added.");
             }
-            else send("ERROR : Group already exists");
+            else send("ERROR : this Group cannot be created, due to any of the following reason(s)\n1. Group with this Group Name already exists.\n2. No member to be added exists.\n3. Group size is less than 3.");
         }
 
         private void handleGroupMsg(String[] parts) {
-            if(parts.length < 2) {
+            if(parts.length < 3) {
                 send("ERROR usage : GROUP_MSG <group_name> <message>");
+                return;
+            }
+            if(username == null) {
+                send("ERROR: Please LOGIN first using LOGIN <username>");
+                return;
+            }
+            Set<String> members = server.getGroupMembers(parts[1]);
+            if(members == null) {
+                send("ERROR : "+ parts[1] + "doesn't exits");
+                return;
+            }
+            if(!members.contains(username)) {
+                send("ERROR : You're not a member of the group " + parts[1]);
                 return;
             }
             if(server.sendGroupMessage(username,parts[1],parts[2])) send("Message sent to group " + parts[1]);
@@ -179,7 +212,33 @@ public class Server {
         }
 
         private void handleListUsers() {
+            if(username == null) {
+                send("ERROR: Please LOGIN first using LOGIN <username>");
+                return;
+            }
             send("Users : " + String.join(",",server.getAllClients()));
+        }
+
+        private void handleGetGroupMembers(String[] parts) {
+            if(parts.length < 2) {
+                send("ERROR usage : GROUP_MEMBERS <group_name>");
+                return;
+            }
+            if(username == null) {
+                send("ERROR: Please LOGIN first using LOGIN <username>");
+                return;
+            }
+            Set<String> members = server.getGroupMembers(parts[1]);
+            if(members == null) send("Group doesn't exist");
+            else send("Group Members of Group " + parts[0] + " : " + String.join(",",members));
+        }
+
+        private void handleListGroups() {
+            if(username == null) {
+                send("ERROR: Please LOGIN first using LOGIN <username>");
+                return;
+            }
+            send("Groups : " + String.join(",",server.getAllGroups()));
         }
 
         private void close() {
