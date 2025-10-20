@@ -6,6 +6,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 
 import java.time.LocalDateTime;
+import java.util.function.Function;
 
 @Entity
 public class Message {
@@ -27,7 +28,7 @@ public class Message {
 
     public Long getMsgId() {return this.msgId;}
 
-    public String  getSender() {return this.sender;}
+    public String getSender() {return this.sender;}
     public String getRecipient() {return this.recipient;}
     public String getMsg() {return this.msg;}
     public LocalDateTime getTimestamp() {return this.timestamp;}
